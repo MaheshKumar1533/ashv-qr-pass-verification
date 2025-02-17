@@ -9,3 +9,5 @@
 */.coverage
 */.coverage.*
 db.sqlite3
+visitor_passes/
+venv/
