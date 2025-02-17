@@ -1,6 +1,5 @@
 *.pyc
-*/py_cache/*
-*/__pycache__/*
+*/__pycache__
 */.DS_Store
 */.idea/*
 */.vscode/*
@@ -11,3 +10,4 @@
 db.sqlite3
 visitor_passes/
 venv/
+VerifyPass/__pycache__
