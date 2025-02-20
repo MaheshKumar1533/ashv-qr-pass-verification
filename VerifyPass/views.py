@@ -25,15 +25,16 @@ def home(request):
         id_num = request.POST.get("id_proof")
         evented = request.POST.get("event")
 
+        gated_form = GatePass.objects.get(pass_number=pass_num)
 
-        checkedin = checkin.objects.filter(holder=gated_form)
+        created = gated_form.holder_name
 
-        if checkedin.exists():
-            return render(request, 'home.html', {'form': GatePassForm(), 'message': "❌Already Checked in"})
-
-
-        # Retrieve or create the gate pass object
-        gated_form, created = GatePass.objects.get_or_create(pass_number=pass_num)
+        if created != "":
+            checkedin, checkin_created = checkin.objects.get_or_create(holder=gated_form)
+            if checkin_created:
+                return render(request, 'home.html', {'form': GatePassForm(), 'message': "✅Checked in"})
+            else:
+                return render(request, 'home.html', {'form': GatePassForm(), 'message': "❌Already Checked in"})
         
         # Retrieve or create the event object
         event_obj = event.objects.get(id=evented)
