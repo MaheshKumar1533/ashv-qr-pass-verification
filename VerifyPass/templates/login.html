@@ -1,0 +1,161 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Login</title>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+			}
+			body {
+				height: 100vh;
+				background-color: #333333;
+
+				.body {
+					display: flex;
+					width: 90%;
+					align-items: center;
+					justify-content: center;
+					color: white;
+					.right {
+						width: 50%;
+						padding: 20px;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						flex-direction: column;
+					}
+					button {
+						background-color: rgb(59, 135, 61);
+						color: white;
+						font-size: 1.5rem;
+						padding: 10px;
+						border-radius: 10px;
+						align-items: center;
+					}
+					.reader {
+						width: 100%;
+					}
+				}
+				form {
+					width: 50%;
+					margin-inline: auto;
+					font-size: 1.5rem;
+					padding: 2rem 1rem;
+					border-radius: 10px;
+					border: 2px solid white;
+					height: min-content;
+					display: flex;
+					flex-direction: column;
+					gap: 10px;
+					h2 {
+						text-align: center;
+					}
+					input,
+					button {
+						height: 30px;
+						border-radius: 10px;
+						width: 60%;
+						outline: none;
+						border: none;
+						font-size: 1.5rem;
+					}
+					p {
+						display: flex;
+						justify-content: space-between;
+					}
+					div {
+						display: flex;
+						justify-content: space-between;
+					}
+
+					button[type="submit"] {
+						width: fit-content;
+						height: fit-content;
+						align-self: center;
+					}
+				}
+				.links {
+					position: fixed;
+					bottom: 10px;
+					right: 10px;
+					display: flex;
+					flex-direction: column;
+					gap: 10px;
+				}
+				.link-button {
+					text-decoration: none;
+					color: white;
+					background-color: rgb(59, 135, 61);
+					text-align: center;
+					font-size: 2rem;
+					border-radius: 5px;
+					padding: 5px;
+				}
+			}
+
+			#reader {
+				width: 100%;
+				max-width: 500px;
+			}
+			.result {
+				font-size: 1.5em;
+				margin-top: 20px;
+			}
+			.login-container {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				flex-direction: column;
+			}
+		</style>
+	</head>
+	<body>
+		<header
+			style="
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 10px;
+				background-color: #444;
+			"
+		>
+			<img
+				src="{% static 'MITS.png' %}"
+				alt="Left Logo"
+				style="height: 50px"
+			/>
+			<h1 style="color: white; text-align: center">
+				Ashv External Registrations
+			</h1>
+			<img
+				src="{% static 'ashv-theraceoftalent.png' %}"
+				alt="Right Logo"
+				style="height: 50px"
+			/>
+		</header>
+		<div class="login-container">
+			<form method="post">
+				<h2>Login</h2>
+				{% csrf_token %}
+				<div class="form-group">
+					<label for="username">Username:</label>
+					<input type="text" id="username" name="username" required />
+				</div>
+				<div class="form-group">
+					<label for="password">Password:</label>
+					<input
+						type="password"
+						id="password"
+						name="password"
+						required
+					/>
+				</div>
+				<button type="submit">Login</button>
+			</form>
+		</div>
+	</body>
+</html>

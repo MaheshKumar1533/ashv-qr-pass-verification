@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from .models import GatePass,checkin, event
 import pandas as pd
@@ -15,7 +15,9 @@ from PIL import Image
 from .forms import CheckinForm, GatePassForm
 from random import randint
 import json
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def home(request):
     if request.method == "POST":
         pass_num = request.POST.get("pass_number")
@@ -35,7 +37,7 @@ def home(request):
                 return render(request, 'home.html', {'form': GatePassForm(), 'message': "✅Checked in"})
             else:
                 return render(request, 'home.html', {'form': GatePassForm(), 'message': "❌Already Checked in"})
-        
+         
         # Retrieve or create the event object
         event_obj = event.objects.get(id=evented)
 
@@ -47,6 +49,9 @@ def home(request):
         gated_form.event = event_obj
         gated_form.save()
 
+        checked = checkin.objects.create(holder=gated_form)
+        checked.save()
+
         # Retrieve or create the check-in record
         return render(request, 'home.html', {'form': GatePassForm(), 'message': "✅Gate pass added successfully and checked in"})
     
@@ -54,19 +59,23 @@ def home(request):
 
 from django.core.serializers import serialize
 
-
-
+@login_required
 def check_pass(request):
     if request.method == "GET":
         pass_number = request.GET.get("pass_number", "").strip()
         GatePas = GatePass.objects.filter(pass_number=pass_number)
         print(GatePas)
         if GatePas.exists():
-            gatepass_data = serialize('json', GatePas)  # If GatePas is a QuerySet
-            return JsonResponse({"valid": True, "gatepass": gatepass_data})
-        return JsonResponse({"valid": False})
+            checkedin = checkin.objects.filter(holder=GatePas[0])
+            if checkedin.exists():
+                return JsonResponse({"valid": False, "message": "Already Checked in"})
+            else:
+                gatepass_data = serialize('json', GatePas)  # If GatePas is a QuerySet
+                return JsonResponse({"valid": True, "gatepass": gatepass_data})
+        return JsonResponse({"valid": False, "message": "Invalid QR Detected"})
     return JsonResponse({"valid": False})
 
+@login_required
 def add_checkin(request):
     if request.method == "POST":
         pass_number = request.POST.get("pass_number", "").strip()
@@ -102,6 +111,7 @@ import zipfile
 from django.core.files.storage import default_storage
 from django.http import HttpResponse
 
+@login_required
 def generate_passes_category(request, category):
     visitors = GatePass.objects.filter(event__category=category)
     template_path = 'static/gatepass.jpeg'
@@ -156,7 +166,7 @@ def generate_passes_category(request, category):
     zip_buffer.seek(0)
     return FileResponse(zip_buffer, as_attachment=True, filename="visitor_passes.zip")
 
-
+@login_required
 def generate_passes(request):
     visitors = GatePass.objects.all()
     template_path = 'static/gatepass.jpeg'
@@ -211,6 +221,7 @@ def generate_passes(request):
     zip_buffer.seek(0)
     return FileResponse(zip_buffer, as_attachment=True, filename="visitor_passes.zip")
 
+@login_required
 def generate_pass(request, pass_id):
     visitor = GatePass.objects.get(pass_number=pass_id)
     template_path = 'static/gatepass.jpeg'
@@ -262,6 +273,7 @@ def generate_pass(request, pass_id):
     img_filename = f"{visitor.holder_name}_{visitor.event.name}_{visitor.pass_number}.jpeg"
     return FileResponse(img_buffer, as_attachment=True, filename=f"visitor_pass_{pass_id}.jpeg")
 
+@login_required
 def add_members(request):
     if request.method == "POST" and request.FILES.get("file"):
         csv_file = request.FILES["file"]
@@ -288,7 +300,7 @@ def add_members(request):
         return JsonResponse({"status": "success", "message": "Members added successfully"})
     return render(request, 'add_members.html')
 
-
+@login_required
 def generate_empty_passes(request, count):
     c = 0
     for _ in range(int(count)):
@@ -305,6 +317,7 @@ def generate_empty_passes(request, count):
     
     return JsonResponse({"status": "success", "message": f"{c} Empty passes generated successfully"})
 
+@login_required
 def empty_passes(request):
     visitors = GatePass.objects.filter(event__category="External")
     zip_buffer = BytesIO()
@@ -342,12 +355,33 @@ def empty_passes(request):
     zip_buffer.seek(0)
     return FileResponse(zip_buffer, as_attachment=True, filename="visitor_passes.zip")
 
+@login_required
 def show_checkins(request):
     checkin_members = checkin.objects.all()
     checkin_data = checkin_members.select_related('holder')
     print(checkin_data)
     return render(request, 'checkins.html', {'checkins': checkin_data})
 
+@login_required
 def show_externals(request):
     external_members = GatePass.objects.filter(event__id=11).exclude(holder_name="")
     return render(request, 'externals.html', {'externals': external_members})
+
+
+from django.contrib.auth.models import User
+from django.contrib.auth import login, authenticate, logout
+
+def login_view(request):
+    if request.method == "POST":
+        user = request.POST.get("username")
+        password = request.POST.get("password")
+        user_obj = authenticate(request, username=user, password=password)
+        if user_obj is not None:
+            login(request, user_obj)
+            return redirect('home')
+    else:
+        return render(request, 'login.html', {'error': 'Invalid username or password'})
+
+def logout_view(request):
+    logout(request)
+    return redirect('login_view')

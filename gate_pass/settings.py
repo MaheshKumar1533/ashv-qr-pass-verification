@@ -25,6 +25,8 @@ SECRET_KEY = 'django-insecure-e65%3)vw2fu5q5#r2gatrzcsznosbij74@jhyj3a1^i-p7@xcb
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+LOGIN_URL = "/login/"
+
 ALLOWED_HOSTS = ["*"]
 
 
@@ -37,7 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'VerifyPass'
+    'VerifyPass',
+    'django_extensions'
 ]
 
 MIDDLEWARE = [

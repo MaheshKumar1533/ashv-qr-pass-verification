@@ -62,6 +62,7 @@
 							outline: none;
 							border: none;
 							font-size: 1.5rem;
+							padding: 5px;
 						}
 						p {
 							display: flex;
@@ -87,14 +88,17 @@
 					flex-direction: column;
 					gap: 10px;
 				}
-				.link-button {
+				.link-button,
+				button {
 					text-decoration: none;
 					color: white;
 					background-color: rgb(59, 135, 61);
 					text-align: center;
 					font-size: 2rem;
 					border-radius: 5px;
-					padding: 5px;
+					padding: 10px;
+					outline: none;
+					border: none;
 				}
 			}
 
@@ -105,6 +109,31 @@
 			.result {
 				font-size: 1.5em;
 				margin-top: 20px;
+			}
+			.display-none {
+				display: none;
+			}
+			@media screen and (max-width: 600px) {
+				.body {
+					flex-direction: column !important;
+					width: 100% !important;
+					button {
+						font-size: 12px !important;
+					}
+				}
+				form {
+					width: 90% !important;
+					font-size: 14px;
+					div {
+						width: 100%;
+						flex-direction: column;
+						input,
+						button {
+							width: 100% !important;
+							font-size: 8px;
+						}
+					}
+				}
 			}
 		</style>
 	</head>
@@ -139,6 +168,8 @@
 			<a href="{% url 'show_externals' %}" class="link-button"
 				>Show External Participants</a
 			>
+			<a href="{% url 'logout_view' %}" class="link-button">Logout</a>
+			<button id="ham">☰</button>
 		</div>
 		<div class="body">
 			<div class="right">
@@ -232,9 +263,7 @@
 									return JSON.parse(data.gatepass);
 								}
 							} else {
-								document.querySelector(
-									'input[name="pass_number"]'
-								).value = decodedText;
+								if (data.message) alert(data.message);
 							}
 						})
 						.then((data) => {
@@ -267,9 +296,17 @@
 				let scanner = new Html5QrcodeScanner("reader", {
 					fps: 10,
 					rememberLastUsedCamera: true,
-					qrbox: 250,
+					qrbox: 1000,
 				});
 				scanner.render(onScanSuccess, onScanError);
+
+				document.querySelector("#ham").addEventListener("click", () => {
+					document.querySelectorAll("a").forEach((link) => {
+						link.classList.toggle("display-none");
+					});
+				});
+
+				document.querySelector("#ham").click();
 			</script>
 		</div>
 	</body>
