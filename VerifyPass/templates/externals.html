@@ -15,6 +15,7 @@
 			<table class="table table-bordered">
 				<thead>
 					<tr>
+						<th>S No</th>
 						<th>ID</th>
 						<th>Holder Name</th>
 						<th>Pass Number</th>
@@ -26,6 +27,7 @@
 				<tbody>
 					{% for external in externals %}
 					<tr>
+						<td>{{ forloop.counter }}</td>
 						<td>{{ external.id }}</td>
 						<td>{{ external.holder_name }}</td>
 						<td>{{ external.pass_number }}</td>

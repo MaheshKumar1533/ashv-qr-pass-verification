@@ -385,3 +385,5 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return redirect('login_view')
+
+# python manage.py runserver_plus --cert-file cert.crt --key-file cert.key 0.0.0.0:8000

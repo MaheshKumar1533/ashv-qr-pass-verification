@@ -15,6 +15,7 @@
 			<table class="table table-bordered">
 				<thead>
 					<tr>
+						<th>S No</th>
 						<th>ID</th>
 						<th>Name</th>
 						<th>Pass Number</th>
@@ -25,6 +26,7 @@
 				<tbody>
 					{% for checkin in checkins %}
 					<tr>
+						<td>{{ forloop.counter }}</td>
 						<td>{{ checkin.id }}</td>
 						<td>{{ checkin.holder.holder_name }}</td>
 						<td>{{ checkin.holder.pass_number }}</td>
