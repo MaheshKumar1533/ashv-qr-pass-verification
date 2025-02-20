@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 	<head>
@@ -6,6 +7,97 @@
 		<title>QR Code Scanner</title>
 		<script src="https://unpkg.com/html5-qrcode@2.2.1/html5-qrcode.min.js"></script>
 		<style>
+			* {
+				margin: 0;
+				padding: 0;
+			}
+			body {
+				height: 100vh;
+				background-color: #333333;
+
+				.body {
+					display: flex;
+					width: 90%;
+					align-items: center;
+					justify-content: center;
+					color: white;
+					.right {
+						width: 50%;
+						padding: 20px;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						flex-direction: column;
+					}
+					button {
+						background-color: rgb(59, 135, 61);
+						color: white;
+						font-size: 1.5rem;
+						padding: 10px;
+						border-radius: 10px;
+						align-items: center;
+					}
+					.reader {
+						width: 100%;
+					}
+					form {
+						width: 50%;
+						margin-inline: auto;
+						font-size: 1.5rem;
+						padding: 2rem 1rem;
+						border-radius: 10px;
+						border: 2px solid white;
+						height: min-content;
+						display: flex;
+						flex-direction: column;
+						gap: 10px;
+						h2 {
+							text-align: center;
+						}
+						input,
+						button {
+							height: 30px;
+							border-radius: 10px;
+							width: 60%;
+							outline: none;
+							border: none;
+							font-size: 1.5rem;
+						}
+						p {
+							display: flex;
+							justify-content: space-between;
+						}
+						div {
+							display: flex;
+							justify-content: space-between;
+						}
+
+						button[type="submit"] {
+							width: fit-content;
+							height: fit-content;
+							align-self: center;
+						}
+					}
+				}
+				.links {
+					position: fixed;
+					bottom: 10px;
+					right: 10px;
+					display: flex;
+					flex-direction: column;
+					gap: 10px;
+				}
+				.link-button {
+					text-decoration: none;
+					color: white;
+					background-color: rgb(59, 135, 61);
+					text-align: center;
+					font-size: 2rem;
+					border-radius: 5px;
+					padding: 5px;
+				}
+			}
+
 			#reader {
 				width: 100%;
 				max-width: 500px;
@@ -17,44 +109,168 @@
 		</style>
 	</head>
 	<body>
-		<h2>Scan QR Code</h2>
-		<div id="reader"></div>
-		<p class="result" id="result">Waiting for scan...</p>
-		<form action="" method="post">
-			{{ csrf_token }} {{ form.as_p }}
-			<button type="submit">Submit Gate Pass</button>
-		</form>
+		<header
+			style="
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 10px;
+				background-color: #444;
+			"
+		>
+			<img
+				src="{% static 'MITS.png' %}"
+				alt="Left Logo"
+				style="height: 50px"
+			/>
+			<h1 style="color: white; text-align: center">
+				Ashv External Registrations
+			</h1>
+			<img
+				src="{% static 'ashv-theraceoftalent.png' %}"
+				alt="Right Logo"
+				style="height: 50px"
+			/>
+		</header>
+		<div class="links">
+			<a href="{% url 'show_checkins' %}" class="link-button"
+				>Show Checkins</a
+			>
+			<a href="{% url 'show_externals' %}" class="link-button"
+				>Show External Participants</a
+			>
+		</div>
+		<div class="body">
+			<div class="right">
+				<h2>Scan QR Code</h2>
+				<div id="reader"></div>
+				<p class="result" id="result">Waiting for scan...</p>
+			</div>
+			<form action="" method="post">
+				<h2>Check-In</h2>
+				{% csrf_token %}
+				<div>
+					<label for="id_pass_number">Pass number:</label>
+					<input
+						type="text"
+						name="pass_number"
+						maxlength="50"
+						required
+						aria-invalid="true"
+						id="id_pass_number"
+					/>
+				</div>
 
-		<script>
-			function onScanSuccess(decodedText, decodedResult) {
-				document.getElementById("result").innerText =
-					"Scanned: " + decodedText;
+				<div>
+					<label for="id_holder_name">Holder name:</label>
+					<input
+						type="text"
+						name="holder_name"
+						maxlength="100"
+						required
+						id="id_holder_name"
+					/>
+				</div>
 
-				fetch(`/check_pass/?pass_number=${decodedText}`)
-					.then((response) => response.json())
-					.then((data) => {
-						if (data.valid) {
-							{
-								console.log(data);
+				<div>
+					<label for="id_phone">Phone:</label>
+					<input
+						type="text"
+						name="phone"
+						maxlength="15"
+						id="id_phone"
+					/>
+				</div>
+
+				<div>
+					<label for="roll_number">Reference Roll No: </label>
+					<input type="text" name="roll_number" id="roll_number" />
+				</div>
+
+				<div>
+					<label for="id_proof">Id proof:</label>
+					<input
+						type="text"
+						name="id_proof"
+						maxlength="100"
+						id="id_proof"
+					/>
+				</div>
+
+				<div>
+					<label for="id_event">Event:</label>
+					<select name="event" required id="id_event">
+						<option value="">---------</option>
+						<option value="1">Cricket</option>
+						<option value="2">VolleyBall</option>
+						<option value="3">Chess</option>
+						<option value="4">Carroms</option>
+						<option value="5">Shotput</option>
+						<option value="6" selected>100m Race</option>
+						<option value="7">HandBall</option>
+						<option value="8">Kabaddi</option>
+						<option value="9">ThrowBall</option>
+						<option value="10">Discus Throw</option>
+						<option value="11" selected>External</option>
+					</select>
+				</div>
+				<button type="submit">Submit Gate Pass</button>
+				<p id="message">{{ message }}</p>
+			</form>
+
+			<script>
+				function onScanSuccess(decodedText, decodedResult) {
+					document.getElementById("result").innerText =
+						"Scanned: " + decodedText;
+
+					fetch(`/check_pass/?pass_number=${decodedText}`)
+						.then((response) => response.json())
+						.then((data) => {
+							if (data.valid) {
+								{
+									console.log(data.gatepass);
+									return JSON.parse(data.gatepass);
+								}
+							} else {
+								document.querySelector(
+									'input[name="pass_number"]'
+								).value = decodedText;
 							}
-						} else {
+						})
+						.then((data) => {
+							data = data[0];
+							document.querySelector(
+								'input[name="holder_name"]'
+							).value = data.fields.holder_name;
+							document.querySelector(
+								'input[name="phone"]'
+							).value = data.fields.phone;
 							document.querySelector(
 								'input[name="pass_number"]'
-							).value = decodedText;
-						}
-					});
-			}
+							).value = data.fields.pass_number;
+							document.querySelector(
+								'input[name="roll_number"]'
+							).value = data.fields.roll_number;
+							document.querySelector(
+								'input[name="id_proof"]'
+							).value = data.fields.id_proof;
+							document.querySelector(
+								`option[value="${data.fields.event}"]`
+							).selected = true;
+						});
+				}
 
-			function onScanError(errorMessage) {
-				console.warn(errorMessage);
-			}
+				function onScanError(errorMessage) {
+					console.warn(errorMessage);
+				}
 
-			let scanner = new Html5QrcodeScanner("reader", {
-				fps: 10,
-				rememberLastUsedCamera: true,
-				qrbox: 250,
-			});
-			scanner.render(onScanSuccess, onScanError);
-		</script>
+				let scanner = new Html5QrcodeScanner("reader", {
+					fps: 10,
+					rememberLastUsedCamera: true,
+					qrbox: 250,
+				});
+				scanner.render(onScanSuccess, onScanError);
+			</script>
+		</div>
 	</body>
 </html>

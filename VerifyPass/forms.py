@@ -4,9 +4,9 @@ from .models import GatePass, event, checkin
 class CheckinForm(ModelForm):
     class Meta:
         model = checkin
-        fields = ['holder', 'checkin_members']
+        fields = ['holder']
 
 class GatePassForm(ModelForm):
     class Meta:
         model = GatePass
-        fields = ['pass_number', 'holder_name', 'name', 'email', 'phone', 'id_proof', 'event']
+        fields = ['holder_name', 'phone', 'id_proof', 'event']

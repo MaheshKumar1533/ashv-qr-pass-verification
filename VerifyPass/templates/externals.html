@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Check-ins</title>
+		<link
+			rel="stylesheet"
+			href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+		/>
+	</head>
+	<body>
+		<div class="container mt-5">
+			<h2 class="mb-4">Check-ins</h2>
+			<table class="table table-bordered">
+				<thead>
+					<tr>
+						<th>ID</th>
+						<th>Holder Name</th>
+						<th>Pass Number</th>
+						<th>Mobile</th>
+						<th>Reference Roll No</th>
+						<th>ID Proof</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for external in externals %}
+					<tr>
+						<td>{{ external.id }}</td>
+						<td>{{ external.holder_name }}</td>
+						<td>{{ external.pass_number }}</td>
+						<td>{{ external.phone }}</td>
+						<td>{{ external.roll_number }}</td>
+						<td>{{ external.id_proof }}</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</body>
+</html>

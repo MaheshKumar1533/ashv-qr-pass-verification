@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Check-ins</title>
+		<link
+			rel="stylesheet"
+			href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+		/>
+	</head>
+	<body>
+		<div class="container mt-5">
+			<h2 class="mb-4">Check-ins</h2>
+			<table class="table table-bordered">
+				<thead>
+					<tr>
+						<th>ID</th>
+						<th>Name</th>
+						<th>Pass Number</th>
+						<th>Check-in Time</th>
+						<th>Check-out Time</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for checkin in checkins %}
+					<tr>
+						<td>{{ checkin.id }}</td>
+						<td>{{ checkin.holder.holder_name }}</td>
+						<td>{{ checkin.holder.pass_number }}</td>
+						<td>{{ checkin.checkin_time }}</td>
+						<td>{{ checkin.checkout_time }}</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</body>
+</html>
