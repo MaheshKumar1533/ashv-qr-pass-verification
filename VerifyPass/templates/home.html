@@ -248,12 +248,13 @@
 				<button type="submit">Submit Gate Pass</button>
 				<p id="message">{{ message }}</p>
 			</form>
-
-			<script>
-				function onScanSuccess(decodedText, decodedResult) {
+		</div>
+		<script>
+			function onScanSuccess(decodedText, decodedResult) {
+				console.log(decodedText);
+				if (decodedText.length === 6) {
 					document.getElementById("result").innerText =
 						"Scanned: " + decodedText;
-
 					fetch(`/check_pass/?pass_number=${decodedText}`)
 						.then((response) => response.json())
 						.then((data) => {
@@ -287,27 +288,76 @@
 								`option[value="${data.fields.event}"]`
 							).selected = true;
 						});
+				} else {
+					data = parseXmlToJson(decodedText);
+					document.getElementById("result").innerText =
+						"Scanned: Aadhar";
+					document.querySelector('input[name="holder_name"]').value =
+						data.PrintLetterBarcodeData.attributes.name;
+					document.querySelector('input[name="id_proof"]').value =
+						data.PrintLetterBarcodeData.attributes.uid;
 				}
+			}
 
-				function onScanError(errorMessage) {
-					console.warn(errorMessage);
+			function onScanError(errorMessage) {
+				console.warn(errorMessage);
+			}
+
+			let scanner = new Html5QrcodeScanner("reader", {
+				fps: 10,
+				rememberLastUsedCamera: true,
+				qrbox: 1000,
+			});
+			scanner.render(onScanSuccess, onScanError);
+
+			document.querySelector("#ham").addEventListener("click", () => {
+				document.querySelectorAll("a").forEach((link) => {
+					link.classList.toggle("display-none");
+				});
+			});
+
+			document.querySelector("#ham").click();
+
+			function xmlToJson(xml) {
+				let obj = {};
+				if (xml.nodeType == 1) {
+					if (xml.attributes.length > 0) {
+						obj["attributes"] = {};
+						for (let j = 0; j < xml.attributes.length; j++) {
+							let attribute = xml.attributes.item(j);
+							console.log(attribute.nodeName);
+							obj["attributes"][attribute.nodeName] =
+								attribute.nodeValue;
+						}
+					}
+				} else if (xml.nodeType == 3) {
+					obj = xml.nodeValue;
 				}
+				if (xml.hasChildNodes()) {
+					for (let i = 0; i < xml.childNodes.length; i++) {
+						let item = xml.childNodes.item(i);
+						let nodeName = item.nodeName;
+						if (typeof obj[nodeName] == "undefined") {
+							obj[nodeName] = xmlToJson(item);
+						} else {
+							if (typeof obj[nodeName].push == "undefined") {
+								let old = obj[nodeName];
+								obj[nodeName] = [];
+								obj[nodeName].push(old);
+							}
+							obj[nodeName].push(xmlToJson(item));
+						}
+					}
+				}
+				return obj;
+			}
 
-				let scanner = new Html5QrcodeScanner("reader", {
-					fps: 10,
-					rememberLastUsedCamera: true,
-					qrbox: 1000,
-				});
-				scanner.render(onScanSuccess, onScanError);
-
-				document.querySelector("#ham").addEventListener("click", () => {
-					document.querySelectorAll("a").forEach((link) => {
-						link.classList.toggle("display-none");
-					});
-				});
-
-				document.querySelector("#ham").click();
-			</script>
-		</div>
+			function parseXmlToJson(xmlString) {
+				let parser = new DOMParser();
+				let xml = parser.parseFromString(xmlString, "text/xml");
+				let json = xmlToJson(xml);
+				return json;
+			}
+		</script>
 	</body>
 </html>

@@ -7,7 +7,6 @@
 */.mypy_cache/*
 */.coverage
 */.coverage.*
-db.sqlite3
 visitor_passes/
 venv/
 VerifyPass/__pycache__
