@@ -379,8 +379,7 @@ def login_view(request):
         if user_obj is not None:
             login(request, user_obj)
             return redirect('home')
-    else:
-        return render(request, 'login.html', {'error': 'Invalid username or password'})
+    return render(request, 'login.html', {'error': 'Invalid username or password'})
 
 def logout_view(request):
     logout(request)
