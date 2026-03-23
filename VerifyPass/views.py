@@ -196,9 +196,9 @@ def create_pass_image(visitor, template_img):
         draw.text((350, 1010), visitor.holder_name.title(), fill="black", font=font) 
     else:
         draw.text((350, 1015), visitor.holder_name.title(), fill="black", font=font) 
-    draw.text((350, 1100), visitor.event.name, fill="black", font=font_large)
-    draw.text((350, 1190), visitor.college.title(), fill="black", font=font_large)
-    draw.text((350, 1280), visitor.pass_number, fill="black", font=font_large)
+    draw.text((350, 1100), visitor.event.name, fill="black", font=font)
+    draw.text((350, 1190), visitor.college or "", fill="black", font=font)
+    draw.text((350, 1280), visitor.pass_number, fill="black", font=font)
     
     return img
 
