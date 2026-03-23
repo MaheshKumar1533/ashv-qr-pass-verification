@@ -10,3 +10,4 @@
 visitor_passes/
 venv/
 VerifyPass/__pycache__
+db.sqlite3

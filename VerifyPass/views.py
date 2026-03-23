@@ -166,47 +166,55 @@ def generate_passes_category(request, category):
     zip_buffer.seek(0)
     return FileResponse(zip_buffer, as_attachment=True, filename="visitor_passes.zip")
 
+def get_template_image(template_path):
+    if default_storage.exists(template_path):
+        with default_storage.open(template_path, 'rb') as f:
+            return Image.open(f).convert("RGB")
+    return Image.new("RGB", (1240, 1754), "white")  # Default A4 size
+
+def create_pass_image(visitor, template_img):
+    img = template_img.copy()
+    draw = ImageDraw.Draw(img)
+    
+    # Generate QR Code
+    qr = qrcode.make(f"{visitor.pass_number}")
+    qr = qr.resize((200, 200)).convert("L")
+    
+    # Paste QR Code onto the image
+    qr_x, qr_y = 160, 1380
+    img.paste(qr, (qr_x, qr_y))
+    
+    # Load font (adjust path and size as needed)
+    font_large = ImageFont.truetype(font="Roboto-Black.ttf", size=44)
+    font_small = ImageFont.truetype(font="Roboto-Black.ttf", size=34)
+    
+    # Choose font size based on name length
+    font = font_small if len(visitor.holder_name) > 30 else font_large
+    
+    # Add Visitor Info
+    if font == font_large:
+        draw.text((350, 1010), visitor.holder_name.title(), fill="black", font=font) 
+    else:
+        draw.text((350, 1015), visitor.holder_name.title(), fill="black", font=font) 
+    draw.text((350, 1100), visitor.event.name, fill="black", font=font_large)
+    draw.text((350, 1190), visitor.college.title(), fill="black", font=font_large)
+    draw.text((350, 1280), visitor.pass_number, fill="black", font=font_large)
+    
+    return img
+
 @login_required
 def generate_passes(request):
     visitors = GatePass.objects.all()
-    template_path = 'static/gatepass.jpeg'
+    template_path = 'static/GatePass Template.jpg'
     zip_buffer = BytesIO()
     zip_buffer.seek(0)
     zip_buffer.truncate()
     
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-        if default_storage.exists(template_path):
-            with default_storage.open(template_path, 'rb') as f:
-                template_img = Image.open(f).convert("RGB")
-        else:
-            template_img = Image.new("RGB", (1240, 1754), "white")  # Default A4 size
+        template_img = get_template_image(template_path)
         
         for visitor in visitors:
-            img = template_img.copy()
-            draw = ImageDraw.Draw(img)
-            
-            # Generate QR Code
-            qr = qrcode.make(f"{visitor.pass_number}")
-            qr = qr.resize((170, 170)).convert("L")
-            
-            # Paste QR Code onto the image
-            qr_x, qr_y = 1030, 338
-            img.paste(qr, (qr_x, qr_y))
-            
-            # Load font (adjust path and size as needed)
-            font_large = ImageFont.truetype(font="Roboto-Black.ttf", size=34)
-            font_small = ImageFont.truetype(font="Roboto-Black.ttf", size=24)
-            
-            # Choose font size based on name length
-            font = font_small if len(visitor.holder_name) > 15 else font_large
-            
-            # Add Visitor Info
-            if font == font_large:
-                draw.text((390, 338), visitor.holder_name.upper(), fill="white", font=font) 
-            else:
-                draw.text((390, 343), visitor.holder_name.upper(), fill="white", font=font) 
-            draw.text((510, 392), visitor.pass_number, fill="white", font=font_large)
-            draw.text((500, 445), visitor.event.name, fill="white", font=font_large)
+            img = create_pass_image(visitor, template_img)
             
             # Save as image in memory
             img_buffer = BytesIO()
@@ -224,46 +232,10 @@ def generate_passes(request):
 @login_required
 def generate_pass(request, pass_id):
     visitor = GatePass.objects.get(pass_number=pass_id)
-    template_path = 'static/gatepass.jpeg'
+    template_path = 'static/GatePass Template.jpg'
     
-    if default_storage.exists(template_path):
-        with default_storage.open(template_path, 'rb') as f:
-            template_img = Image.open(f)
-            width, height = template_img.size
-    else:
-        width, height = A4  # Default to A4 if template is missing
-
-    if default_storage.exists(template_path):
-        with default_storage.open(template_path, 'rb') as f:
-            template_img = Image.open(f).convert("RGB")
-    else:
-        template_img = Image.new("RGB", (1240, 1754), "white")  # Default A4 size
-
-    img = template_img.copy()
-    draw = ImageDraw.Draw(img)
-    
-    # Generate QR Code
-    qr = qrcode.make(f"{visitor.pass_number}")
-    qr = qr.resize((170, 170)).convert("L")
-    
-    # Paste QR Code onto the image
-    qr_x, qr_y = 1030, 338
-    img.paste(qr, (qr_x, qr_y))
-    
-    # Load font (adjust path and size as needed)
-    font_large = ImageFont.truetype(font="Roboto-Black.ttf", size=34)
-    font_small = ImageFont.truetype(font="Roboto-Black.ttf", size=24)
-    
-    # Choose font size based on name length
-    font = font_small if len(visitor.holder_name) > 15 else font_large
-    
-    # Add Visitor Info
-    if font == font_large:
-        draw.text((390, 338), visitor.holder_name.upper(), fill="white", font=font) 
-    else:
-        draw.text((390, 343), visitor.holder_name.upper(), fill="white", font=font) 
-    draw.text((510, 392), visitor.pass_number, fill="white", font=font_large)
-    draw.text((500, 445), visitor.event.name, fill="white", font=font_large)
+    template_img = get_template_image(template_path)
+    img = create_pass_image(visitor, template_img)
     
     # Save as image in memory
     img_buffer = BytesIO()
@@ -271,7 +243,7 @@ def generate_pass(request, pass_id):
     img_buffer.seek(0)
     
     img_filename = f"{visitor.holder_name}_{visitor.event.name}_{visitor.pass_number}.jpeg"
-    return FileResponse(img_buffer, as_attachment=True, filename=f"visitor_pass_{pass_id}.jpeg")
+    return FileResponse(img_buffer, as_attachment=True, filename=img_filename)
 
 @login_required
 def add_members(request):
@@ -283,10 +255,9 @@ def add_members(request):
         for column in required_columns:
             if column not in df.columns:
                 return JsonResponse({"status": "error", "message": f"Missing required column: {column}"})
-
         for _, row in df.iterrows():
             event_name = row["Event"]
-            event_model = get_object_or_404(event, name=event_name)
+            event_model, _ = event.objects.get_or_create(name=event_name, category=row["Category"])
             pass_no = randint(100000, 999999)
             while GatePass.objects.filter(pass_number=pass_no).exists():
                 pass_no = randint(100000, 999999)
@@ -311,7 +282,7 @@ def generate_empty_passes(request, count):
         GatePass.objects.create(
             pass_number=pass_no,
             holder_name="",
-            event_id=11,
+            event_id=1,
         )
         c+=1
     
@@ -319,13 +290,14 @@ def generate_empty_passes(request, count):
 
 @login_required
 def empty_passes(request):
-    visitors = GatePass.objects.filter(event__category="External")
+    visitors = GatePass.objects.filter(event__category="external")
     zip_buffer = BytesIO()
     zip_buffer.seek(0)
     zip_buffer.truncate()
     
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-        template_img = Image.new("RGB", (170, 170), "white")  # Default A4 size
+        template_path = 'static/GatePass Template.jpg'
+        template_img = get_template_image(template_path)
         
         for visitor in visitors:
             img = template_img.copy()
@@ -333,15 +305,15 @@ def empty_passes(request):
             
             # Generate QR Code
             qr = qrcode.make(f"{visitor.pass_number}")
-            qr = qr.resize((170, 170)).convert("L")
+            qr = qr.resize((200, 200)).convert("L")
             
             # Paste QR Code onto the image
-            qr_x, qr_y = 0, 0
+            qr_x, qr_y = 160, 1380
             img.paste(qr, (qr_x, qr_y))
+
+            font_large = ImageFont.truetype(font="Roboto-Black.ttf", size=44)
+            draw.text((350, 1280), visitor.pass_number, fill="black", font=font_large)
             
-            # Load font (adjust path and size as needed)
-            font_large = ImageFont.truetype(font="Roboto-Black.ttf", size=34)
-            font_small = ImageFont.truetype(font="Roboto-Black.ttf", size=24)
             # Save as image in memory
             img_buffer = BytesIO()
             img.save(img_buffer, format="JPEG")
