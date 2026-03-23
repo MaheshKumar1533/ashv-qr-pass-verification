@@ -251,7 +251,7 @@ def add_members(request):
         csv_file = request.FILES["file"]
         df = pd.read_csv(csv_file)
         
-        required_columns = ['Name', 'Event', 'Category']
+        required_columns = ['Name', 'Event', 'Category', 'College Name']
         for column in required_columns:
             if column not in df.columns:
                 return JsonResponse({"status": "error", "message": f"Missing required column: {column}"})
@@ -266,6 +266,7 @@ def add_members(request):
                 pass_number=pass_no,
                 holder_name=row["Name"],
                 event_id=event_model.id,  # Correctly use event.id instead of row["event_id"]
+                college=row["College Name"]
             )
         
         return JsonResponse({"status": "success", "message": "Members added successfully"})
