@@ -16,6 +16,9 @@ from .forms import CheckinForm, GatePassForm
 from random import randint
 import json
 from django.contrib.auth.decorators import login_required
+from django.db.models import Min
+from django.views.decorators.http import require_GET
+from django.utils import timezone
 
 @login_required
 def home(request):
@@ -75,6 +78,65 @@ def check_pass(request):
         return JsonResponse({"valid": False, "message": "Invalid QR Detected"})
     return JsonResponse({"valid": False})
 
+
+@require_GET
+def verify_pass_api(request, pass_number=None):
+    query_pass_number = (pass_number or request.GET.get("pass_number", "")).strip()
+
+    if not query_pass_number:
+        return JsonResponse(
+            {
+                "verified": False,
+                "message": "pass_number is required",
+            },
+            status=400,
+        )
+
+    gate_pass = GatePass.objects.select_related("event").filter(pass_number=query_pass_number).first()
+
+    if gate_pass is None:
+        return JsonResponse(
+            {
+                "verified": False,
+                "message": "Pass not found",
+                "pass_number": query_pass_number,
+            },
+            status=404,
+        )
+
+    checkins = checkin.objects.filter(holder=gate_pass).order_by("checkin_time")
+    latest_checkin = checkins.last()
+
+    is_valid_date = gate_pass.valid_until >= timezone.localdate()
+
+    return JsonResponse(
+        {
+            "verified": True,
+            "message": "Pass verified successfully",
+            "pass": {
+                "pass_number": gate_pass.pass_number,
+                "holder_name": gate_pass.holder_name,
+                "roll_number": gate_pass.roll_number,
+                "college": gate_pass.college,
+                "phone": gate_pass.phone,
+                "id_proof": gate_pass.id_proof,
+                "event": {
+                    "id": gate_pass.event.id,
+                    "name": gate_pass.event.name,
+                    "category": gate_pass.event.category,
+                },
+                "valid_until": gate_pass.valid_until,
+                "referred_by": gate_pass.referred_by,
+            },
+            "verification": {
+                "is_valid_date": is_valid_date,
+                "is_checked_in": checkins.exists(),
+                "checkin_count": checkins.count(),
+                "latest_checkin_time": latest_checkin.checkin_time if latest_checkin else None,
+            },
+        }
+    )
+
 @login_required
 def add_checkin(request):
     if request.method == "POST":
@@ -114,44 +176,22 @@ from django.http import HttpResponse
 @login_required
 def generate_passes_category(request, category):
     visitors = GatePass.objects.filter(event__category=category)
-    template_path = 'static/gatepass.jpeg'
+    subquery = GatePass.objects.filter(event__category=category) \
+                           .values('holder_name') \
+                           .annotate(min_id=Min('id')) \
+                           .values('min_id')
+
+    visitors = GatePass.objects.filter(id__in=subquery)
+    template_path = 'static/GatePass Template.jpg'
     zip_buffer = BytesIO()
     zip_buffer.seek(0)
     zip_buffer.truncate()
     
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-        if default_storage.exists(template_path):
-            with default_storage.open(template_path, 'rb') as f:
-                template_img = Image.open(f).convert("RGB")
-        else:
-            template_img = Image.new("RGB", (1240, 1754), "white")  # Default A4 size
+        template_img = get_template_image(template_path)
         
         for visitor in visitors:
-            img = template_img.copy()
-            draw = ImageDraw.Draw(img)
-            
-            # Generate QR Code
-            qr = qrcode.make(f"{visitor.pass_number}")
-            qr = qr.resize((170, 170)).convert("L")
-            
-            # Paste QR Code onto the image
-            qr_x, qr_y = 1030, 338
-            img.paste(qr, (qr_x, qr_y))
-            
-            # Load font (adjust path and size as needed)
-            font_large = ImageFont.truetype(font="Roboto-Black.ttf", size=34)
-            font_small = ImageFont.truetype(font="Roboto-Black.ttf", size=24)
-            
-            # Choose font size based on name length
-            font = font_small if len(visitor.holder_name) > 15 else font_large
-            
-            # Add Visitor Info
-            if font == font_large:
-                draw.text((390, 338), visitor.holder_name.upper(), fill="white", font=font) 
-            else:
-                draw.text((390, 343), visitor.holder_name.upper(), fill="white", font=font) 
-            draw.text((510, 392), visitor.pass_number, fill="white", font=font_large)
-            draw.text((500, 445), visitor.event.name, fill="white", font=font_large)
+            img = create_pass_image(visitor, template_img)
             
             # Save as image in memory
             img_buffer = BytesIO()
@@ -189,22 +229,36 @@ def create_pass_image(visitor, template_img):
     font_small = ImageFont.truetype(font="Roboto-Black.ttf", size=34)
     
     # Choose font size based on name length
-    font = font_small if len(visitor.holder_name) > 30 else font_large
+    font = font_small if len(visitor.holder_name) > 35 else font_large
+
+    event_name = visitor.event.name[:35] + "..." if len(visitor.event.name) > 35 else visitor.event.name
+    college = ""
+
+    if visitor.college and len(visitor.college) > 35:
+        college = visitor.college[:35] + "..."
+    else:
+        college = visitor.college
     
     # Add Visitor Info
     if font == font_large:
         draw.text((350, 1010), visitor.holder_name.title(), fill="black", font=font) 
     else:
         draw.text((350, 1015), visitor.holder_name.title(), fill="black", font=font) 
-    draw.text((350, 1100), visitor.event.name, fill="black", font=font)
-    draw.text((350, 1190), visitor.college or "", fill="black", font=font)
+    draw.text((350, 1100), event_name, fill="black", font=font)
+    draw.text((350, 1190), college or "", fill="black", font=font)
     draw.text((350, 1280), visitor.pass_number, fill="black", font=font)
     
     return img
 
 @login_required
 def generate_passes(request):
-    visitors = GatePass.objects.all()
+    visitors = GatePass.objects.exclude(holder_name="")
+    subquery = GatePass.objects.exclude(holder_name="") \
+                           .values('holder_name') \
+                           .annotate(min_id=Min('id')) \
+                           .values('min_id')
+
+    visitors = GatePass.objects.filter(id__in=subquery)
     template_path = 'static/GatePass Template.jpg'
     zip_buffer = BytesIO()
     zip_buffer.seek(0)
