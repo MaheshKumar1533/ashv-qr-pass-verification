@@ -231,18 +231,9 @@
 				<div>
 					<label for="id_event">Event:</label>
 					<select name="event" required id="id_event">
-						<option value="">---------</option>
-						<option value="1">Cricket</option>
-						<option value="2">VolleyBall</option>
-						<option value="3">Chess</option>
-						<option value="4">Carroms</option>
-						<option value="5">Shotput</option>
-						<option value="6" selected>100m Race</option>
-						<option value="7">HandBall</option>
-						<option value="8">Kabaddi</option>
-						<option value="9">ThrowBall</option>
-						<option value="10">Discus Throw</option>
-						<option value="11" selected>External</option>
+						{% for evt in events %}
+						<option value="{{ evt.id }}">{{ evt.name }}</option>
+						{% endfor %}
 					</select>
 				</div>
 				<button type="submit">Submit Gate Pass</button>

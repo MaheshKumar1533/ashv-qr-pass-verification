@@ -57,8 +57,11 @@ def home(request):
 
         # Retrieve or create the check-in record
         return render(request, 'home.html', {'form': GatePassForm(), 'message': "✅Gate pass added successfully and checked in"})
+
+
+    events = event.objects.all()
     
-    return render(request, 'home.html', {'form': GatePassForm()})
+    return render(request, 'home.html', {'form': GatePassForm(), 'events': events})
 
 from django.core.serializers import serialize
 
